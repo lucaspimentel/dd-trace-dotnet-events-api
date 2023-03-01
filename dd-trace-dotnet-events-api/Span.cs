@@ -1,7 +1,9 @@
 ﻿namespace Datadog.Trace.Events;
 
-public sealed class Span : IDisposable
+public readonly struct Span : IDisposable, IEquatable<Span>
 {
+    public static readonly Span None = default;
+
     private readonly Tracer _tracer;
 
     public ulong TraceId { get; }
@@ -10,15 +12,12 @@ public sealed class Span : IDisposable
 
     public ulong ParentId { get; }
 
-    public Span? Parent { get; }
-
-    internal Span(Tracer tracer, ulong traceId, ulong spanId, ulong parentId, Span? parent)
+    internal Span(Tracer tracer, ulong traceId, ulong spanId, ulong parentId)
     {
         _tracer = tracer;
         TraceId = traceId;
         SpanId = spanId;
         ParentId = parentId;
-        Parent = parent;
     }
 
     public void AddTag(string name, string value)
@@ -34,5 +33,30 @@ public sealed class Span : IDisposable
     public void Dispose()
     {
         _tracer.FinishSpan(this);
+    }
+
+    public bool Equals(Span other)
+    {
+        return TraceId == other.TraceId && SpanId == other.SpanId;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Span other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(TraceId, SpanId);
+    }
+
+    public static bool operator ==(Span left, Span right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Span left, Span right)
+    {
+        return !left.Equals(right);
     }
 }

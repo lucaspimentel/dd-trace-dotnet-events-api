@@ -80,18 +80,30 @@ internal ref struct MessagePackWriterHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(KeyValuePair<string, string>[] tags)
     {
-        if (tags == null!)
+        if (tags == null! || tags.Length == 0)
         {
             _writer.WriteMapHeader(0);
+            return;
         }
-        else
-        {
-            _writer.WriteMapHeader(tags.Length);
 
-            foreach (var pair in tags)
+        int count = 0;
+
+        foreach (var tag in tags)
+        {
+            if (!string.IsNullOrEmpty(tag.Value))
             {
-                Write(pair.Key);
-                Write(pair.Value);
+                count++;
+            }
+        }
+
+        _writer.WriteMapHeader(count);
+
+        foreach ((string key, string value) in tags)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                Write(key);
+                Write(value);
             }
         }
     }
@@ -99,19 +111,18 @@ internal ref struct MessagePackWriterHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(KeyValuePair<string, double>[] tags)
     {
-        if (tags == null!)
+        if (tags == null! || tags.Length == 0)
         {
             _writer.WriteMapHeader(0);
+            return;
         }
-        else
-        {
-            _writer.WriteMapHeader(tags.Length);
 
-            foreach (var pair in tags)
-            {
-                Write(pair.Key);
-                Write(pair.Value);
-            }
+        _writer.WriteMapHeader(tags.Length);
+
+        foreach ((string key, double value) in tags)
+        {
+            Write(key);
+            Write(value);
         }
     }
 

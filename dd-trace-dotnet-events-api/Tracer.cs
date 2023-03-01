@@ -1,12 +1,18 @@
 ﻿using System.Buffers;
+using System.Collections.Concurrent;
 using Datadog.Trace.Events.Writers;
 
 namespace Datadog.Trace.Events;
 
 public sealed class Tracer
 {
-    private readonly AsyncLocal<Span?> _activeSpan = new();
+    private static readonly string RuntimeId = Guid.NewGuid().ToString();
+
+    private static readonly string Env = Environment.GetEnvironmentVariable("DD_ENV") ?? "";
+
+    private readonly AsyncLocal<Span> _activeSpan = new();
     private readonly List<SpanEvent> _events = new();
+    private readonly ConcurrentDictionary<Span, Span> _openSpans = new();
     private readonly ISpanEventWriter _writer;
 
     public Tracer(ISpanEventWriter writer)
@@ -23,20 +29,53 @@ public sealed class Tracer
         ulong traceId;
         ulong spanId = (ulong)Random.Shared.NextInt64();
         ulong parentId;
+        Span parent = _activeSpan.Value;
 
-        if (_activeSpan.Value is { TraceId: > 0, SpanId: > 0 } parent)
-        {
-            traceId = parent.TraceId;
-            parentId = parent.SpanId;
-        }
-        else
+        if (parent == Span.None)
         {
             traceId = (ulong)Random.Shared.NextInt64();
             parentId = 0;
         }
+        else
+        {
+            traceId = parent.TraceId;
+            parentId = parent.SpanId;
+        }
 
-        var span = new Span(this, traceId, spanId, parentId, _activeSpan.Value);
-        _activeSpan.Value = span;
+        var span = new Span(this, traceId, spanId, parentId);
+        PushSpan(span, parent);
+
+        KeyValuePair<string, string>[] meta;
+        KeyValuePair<string, double>[] metrics;
+
+        if (parentId == 0)
+        {
+            meta = new KeyValuePair<string, string>[]
+                   {
+                       new("language", "dotnet"),
+                       new("runtime-id", RuntimeId),
+                       new("env", Env)
+                   };
+
+            metrics = new KeyValuePair<string, double>[]
+                      {
+                          new("_dd.tracer_kr", 0),
+                          new("_dd.agent_psr", 1),
+                          new("_sampling_priority_v1", 1),
+                          new("_dd.top_level", 1),
+                          new("process_id", Environment.ProcessId),
+                      };
+        }
+        else
+        {
+            meta = new KeyValuePair<string, string>[]
+                   {
+                       new("language", "dotnet"),
+                       new("env", Env)
+                   };
+
+            metrics = Array.Empty<KeyValuePair<string, double>>();
+        }
 
         var spanEvent = new StartSpanEvent(
             traceId,
@@ -47,8 +86,8 @@ public sealed class Tracer
             name,
             resource,
             type,
-            Array.Empty<KeyValuePair<string, string>>(),
-            Array.Empty<KeyValuePair<string, double>>());
+            meta,
+            metrics);
 
         lock (_events)
         {
@@ -60,12 +99,7 @@ public sealed class Tracer
 
     internal void FinishSpan(Span span)
     {
-        if (_activeSpan.Value == span)
-        {
-            // if the active span is finished, set its parent as the new active span.
-            // if it didn't have a parent, then there is no active span now.
-            _activeSpan.Value = span.Parent;
-        }
+        PopSpan(span);
 
         var spanEvent = new FinishSpanEvent(
             span.TraceId,
@@ -128,6 +162,25 @@ public sealed class Tracer
 
         Array.Clear(events);
         ArrayPool<SpanEvent>.Shared.Return(events);
+    }
+
+    private void PushSpan(Span span, Span parent)
+    {
+        _activeSpan.Value = span;
+        _openSpans.TryAdd(span, parent);
+    }
+
+    private void PopSpan(Span span)
+    {
+        if (_openSpans.TryRemove(span, out var parent))
+        {
+            // if the active span is finished, set its parent as the new active span.
+            // if it didn't have a parent, then there is no active span now.
+            if (_activeSpan.Value == span)
+            {
+                _activeSpan.Value = parent;
+            }
+        }
     }
 
     private static KeyValuePair<string, TValue>[] CreateTagsArray<TValue>(string name, TValue value)
