@@ -1,19 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Engines;
 using Datadog.Trace.Events.Serializers;
 using Datadog.Trace.Events.Writers;
 
 namespace Benchmarks;
 
-[SimpleJob(RuntimeMoniker.Net70)]
+[ShortRunJob]
+// [SimpleJob(RunStrategy.Monitoring)]
 [MemoryDiagnoser]
+[MinColumn, Q1Column, Q3Column, MaxColumn]
+[EventPipeProfiler(EventPipeProfile.CpuSampling)]
+[GcServer(true)]
 public class Benchmarks
 {
-    // [Params(0, 1, 2)]
-    // public int Foo;
-
     private const int SpansPerTrace = 10;
     private const int TagsPerSpan = 10;
 
@@ -30,12 +32,12 @@ public class Benchmarks
         }
     }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public async ValueTask SendFullTrace()
     {
         var tracer = new FullTraceTracer(Datadog.Trace.Tracer.Instance);
 
-        CreateTrace(tracer, spansPerTrace: SpansPerTrace, tagsPerSpan: TagsPerSpan);
+        CreateTrace(tracer, "full trace chunk", spansPerTrace: SpansPerTrace, tagsPerSpan: TagsPerSpan);
         await tracer.FlushAsync();
     }
 
@@ -46,14 +48,16 @@ public class Benchmarks
         var eventWriter = new HttpSpanEventWriter(eventSerializer, "http://localhost:8127/v0.1/events");
         var tracer = new EventTracer(new Datadog.Trace.Events.Tracer(eventWriter));
 
-        CreateTrace(tracer, spansPerTrace: SpansPerTrace, tagsPerSpan: TagsPerSpan);
+        CreateTrace(tracer, "events api", spansPerTrace: SpansPerTrace, tagsPerSpan: TagsPerSpan);
         await tracer.FlushAsync();
     }
 
-    private void CreateTrace(ITracer tracer, int spansPerTrace, int tagsPerSpan)
+    private void CreateTrace(ITracer tracer, string tracerType, int spansPerTrace, int tagsPerSpan)
     {
         using (var root = tracer.StartSpan("root", "server", "my-service", "root-resource"))
         {
+            root.AddTag("tracer-type", tracerType);
+
             // add tags to root span
             for (int tagIndex = 0; tagIndex < tagsPerSpan; tagIndex++)
             {

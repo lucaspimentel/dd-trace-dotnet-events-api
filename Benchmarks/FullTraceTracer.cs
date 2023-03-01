@@ -5,7 +5,7 @@ namespace Benchmarks;
 
 public sealed class FullTraceTracer : ITracer
 {
-    private readonly Datadog.Trace.Tracer _tracer;
+    private readonly Tracer _tracer;
 
     public FullTraceTracer(Tracer tracer)
     {
@@ -21,7 +21,7 @@ public sealed class FullTraceTracer : ITracer
         span.ServiceName = service;
         span.ResourceName = resource;
 
-        return new FullTraceSpan(span);
+        return new FullTraceSpan(scope);
     }
 
     public ValueTask FlushAsync()
@@ -32,20 +32,20 @@ public sealed class FullTraceTracer : ITracer
 
 public sealed class FullTraceSpan : ISpan
 {
-    private readonly Datadog.Trace.ISpan _span;
+    private readonly IScope _scope;
 
-    public FullTraceSpan(Datadog.Trace.ISpan span)
+    public FullTraceSpan(IScope scope)
     {
-        _span = span;
+        _scope = scope;
     }
 
     public void Dispose()
     {
-        _span.Dispose();
+        _scope.Dispose();
     }
 
     public void AddTag(string name, string value)
     {
-        _span.SetTag(name, value);
+        _scope.Span.SetTag(name, value);
     }
 }
