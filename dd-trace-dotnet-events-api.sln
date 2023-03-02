@@ -2,9 +2,13 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dd-trace-dotnet-events-api", "dd-trace-dotnet-events-api\dd-trace-dotnet-events-api.csproj", "{6CA6A98E-187E-4794-B1B9-D5CECC0E18AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{6F2D8BFF-6236-4D6C-AB6E-C5C994859FF9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp-EventsApi", "ConsoleApp-EventsApi\ConsoleApp-EventsApi.csproj", "{6F2D8BFF-6236-4D6C-AB6E-C5C994859FF9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{96AF4684-2EE6-4004-BF10-008251849040}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp-v0.4", "ConsoleApp-v0.4\ConsoleApp-v0.4.csproj", "{8B5597E7-28EA-4B96-86BA-5D0199A21093}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonTracerInterfaces", "CommonTracerInterfaces\CommonTracerInterfaces.csproj", "{F793E0E7-A8AF-4F2B-BC44-B24AFF467C4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +28,13 @@ Global
 		{96AF4684-2EE6-4004-BF10-008251849040}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96AF4684-2EE6-4004-BF10-008251849040}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96AF4684-2EE6-4004-BF10-008251849040}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B5597E7-28EA-4B96-86BA-5D0199A21093}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B5597E7-28EA-4B96-86BA-5D0199A21093}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B5597E7-28EA-4B96-86BA-5D0199A21093}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B5597E7-28EA-4B96-86BA-5D0199A21093}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F793E0E7-A8AF-4F2B-BC44-B24AFF467C4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F793E0E7-A8AF-4F2B-BC44-B24AFF467C4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F793E0E7-A8AF-4F2B-BC44-B24AFF467C4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F793E0E7-A8AF-4F2B-BC44-B24AFF467C4E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
