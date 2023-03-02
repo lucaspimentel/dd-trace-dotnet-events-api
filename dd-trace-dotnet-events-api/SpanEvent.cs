@@ -13,21 +13,21 @@ public record StartSpanEvent(
         string Name,
         string Resource,
         string Type,
-        KeyValuePair<string, string>[] Meta,
-        KeyValuePair<string, double>[] Metrics)
+        ReadOnlyMemory<KeyValuePair<string, string>> Meta,
+        ReadOnlyMemory<KeyValuePair<string, double>> Metrics)
     : SpanEvent(TraceId, SpanId);
 
 public record FinishSpanEvent(
         ulong TraceId,
         ulong SpanId,
         DateTimeOffset Timestamp,
-        KeyValuePair<string, string>[] Meta,
-        KeyValuePair<string, double>[] Metrics)
+        ReadOnlyMemory<KeyValuePair<string, string>> Meta,
+        ReadOnlyMemory<KeyValuePair<string, double>> Metrics)
     : SpanEvent(TraceId, SpanId);
 
 public record AddTagsSpanEvent(
         ulong TraceId,
         ulong SpanId,
-        KeyValuePair<string, string>[] Meta,
-        KeyValuePair<string, double>[] Metrics)
+        ReadOnlyMemory<KeyValuePair<string, string>> Meta,
+        ReadOnlyMemory<KeyValuePair<string, double>> Metrics)
     : SpanEvent(TraceId, SpanId);

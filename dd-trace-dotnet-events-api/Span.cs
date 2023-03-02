@@ -1,4 +1,6 @@
-﻿namespace Datadog.Trace.Events;
+﻿using System.Runtime.CompilerServices;
+
+namespace Datadog.Trace.Events;
 
 public readonly struct Span : IDisposable, IEquatable<Span>
 {
@@ -20,16 +22,19 @@ public readonly struct Span : IDisposable, IEquatable<Span>
         ParentId = parentId;
     }
 
-    public void AddTag(string name, string value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AddTags(ReadOnlyMemory<KeyValuePair<string, string>> tags)
     {
-        _tracer.AddTag(this, name, value);
+        _tracer.AddTags(this, tags);
     }
 
-    public void AddTag(string name, double value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AddTags(ReadOnlyMemory<KeyValuePair<string, double>> tags)
     {
-        _tracer.AddTag(this, name, value);
+        _tracer.AddTags(this, tags);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
         _tracer.FinishSpan(this);

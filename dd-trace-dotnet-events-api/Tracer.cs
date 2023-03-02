@@ -1,5 +1,7 @@
 ﻿using System.Buffers;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
+using CommunityToolkit.HighPerformance.Buffers;
 using Datadog.Trace.Events.Writers;
 
 namespace Datadog.Trace.Events;
@@ -11,7 +13,7 @@ public sealed class Tracer
     private static readonly string Env = Environment.GetEnvironmentVariable("DD_ENV") ?? "";
 
     private readonly AsyncLocal<Span> _activeSpan = new();
-    private readonly List<SpanEvent> _events = new();
+    private readonly ArrayPoolBufferWriter<SpanEvent> _events = new();
     private readonly ConcurrentDictionary<Span, Span> _openSpans = new();
     private readonly ISpanEventWriter _writer;
 
@@ -91,7 +93,9 @@ public sealed class Tracer
 
         lock (_events)
         {
-            _events.Add(spanEvent);
+            var events = _events.GetSpan(1);
+            events[0] = spanEvent;
+            _events.Advance(1);
         }
 
         return span;
@@ -105,71 +109,80 @@ public sealed class Tracer
             span.TraceId,
             span.SpanId,
             DateTimeOffset.UtcNow,
-            Array.Empty<KeyValuePair<string, string>>(),
-            Array.Empty<KeyValuePair<string, double>>()
+            ReadOnlyMemory<KeyValuePair<string, string>>.Empty,
+            ReadOnlyMemory<KeyValuePair<string, double>>.Empty
         );
 
         lock (_events)
         {
-            _events.Add(spanEvent);
+            var events = _events.GetSpan(1);
+            events[0] = spanEvent;
+            _events.Advance(1);
         }
     }
 
-    internal void AddTag(Span span, string name, string value)
+    internal void AddTags(Span span, ReadOnlyMemory<KeyValuePair<string, string>> tags)
     {
         var spanEvent = new AddTagsSpanEvent(
             span.TraceId,
             span.SpanId,
-            CreateTagsArray(name, value),
-            Array.Empty<KeyValuePair<string, double>>()
+            tags,
+            ReadOnlyMemory<KeyValuePair<string, double>>.Empty
         );
 
         lock (_events)
         {
-            _events.Add(spanEvent);
+            var events = _events.GetSpan(1);
+            events[0] = spanEvent;
+            _events.Advance(1);
         }
     }
 
-    internal void AddTag(Span span, string name, double value)
+    internal void AddTags(Span span, ReadOnlyMemory<KeyValuePair<string, double>> tags)
     {
         var spanEvent = new AddTagsSpanEvent(
             span.TraceId,
             span.SpanId,
-            Array.Empty<KeyValuePair<string, string>>(),
-            CreateTagsArray(name, value)
+            ReadOnlyMemory<KeyValuePair<string, string>>.Empty,
+            tags
         );
 
         lock (_events)
         {
-            _events.Add(spanEvent);
+            var events = _events.GetSpan(1);
+            events[0] = spanEvent;
+            _events.Advance(1);
         }
     }
 
     public async ValueTask FlushAsync(CancellationToken cancellationToken = default)
     {
-        SpanEvent[] events;
-        int eventCount;
+        SpanEvent[] rentedArray;
+        Memory<SpanEvent> memory;
 
         lock (_events)
         {
-            eventCount = _events.Count;
-            events = ArrayPool<SpanEvent>.Shared.Rent(eventCount);
-            _events.CopyTo(events);
+            int eventCount = _events.WrittenCount;
+            rentedArray = ArrayPool<SpanEvent>.Shared.Rent(eventCount);
+            memory = rentedArray.AsMemory(0, eventCount);
+            _events.WrittenMemory.CopyTo(memory);
             _events.Clear();
         }
 
-        await _writer.WriteAsync(events.AsMemory(0, eventCount), cancellationToken).ConfigureAwait(false);
+        await _writer.WriteAsync(memory, cancellationToken).ConfigureAwait(false);
 
-        Array.Clear(events);
-        ArrayPool<SpanEvent>.Shared.Return(events);
+        Array.Clear(rentedArray);
+        ArrayPool<SpanEvent>.Shared.Return(rentedArray);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PushSpan(Span span, Span parent)
     {
         _activeSpan.Value = span;
         _openSpans.TryAdd(span, parent);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PopSpan(Span span)
     {
         if (_openSpans.TryRemove(span, out var parent))
@@ -181,10 +194,5 @@ public sealed class Tracer
                 _activeSpan.Value = parent;
             }
         }
-    }
-
-    private static KeyValuePair<string, TValue>[] CreateTagsArray<TValue>(string name, TValue value)
-    {
-        return new[] { new KeyValuePair<string, TValue>(name, value) };
     }
 }
