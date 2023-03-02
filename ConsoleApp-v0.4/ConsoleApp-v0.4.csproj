@@ -5,10 +5,15 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>ConsoleApp.v04</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\dd-trace-dotnet-events-api\dd-trace-dotnet-events-api.csproj" />
+      <ProjectReference Include="..\CommonTracerInterfaces\CommonTracerInterfaces.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Datadog.Trace" Version="2.24.1" />
     </ItemGroup>
 
 </Project>
