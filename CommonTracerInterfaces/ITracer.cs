@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace Benchmarks;
+﻿namespace CommonTracerInterfaces;
 
 public interface ITracer
 {
@@ -13,5 +10,5 @@ public interface ITracer
 
 public interface ISpan : IDisposable
 {
-    void AddTag(string name, string value);
+    void AddTags(ReadOnlyMemory<KeyValuePair<string, string>> tags);
 }

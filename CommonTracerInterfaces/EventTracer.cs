@@ -1,7 +1,6 @@
-﻿using System.Threading.Tasks;
-using Datadog.Trace.Events;
+﻿using Datadog.Trace.Events;
 
-namespace Benchmarks;
+namespace CommonTracerInterfaces;
 
 public sealed class EventTracer : ITracer
 {
@@ -38,8 +37,8 @@ public sealed class EventSpan : ISpan
         _span.Dispose();
     }
 
-    public void AddTag(string name, string value)
+    public void AddTags(ReadOnlyMemory<KeyValuePair<string, string>> tags)
     {
-        _span.AddTag(name, value);
+        _span.AddTags(tags);
     }
 }

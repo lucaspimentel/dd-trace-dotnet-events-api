@@ -1,7 +1,6 @@
-﻿using System.Threading.Tasks;
-using Datadog.Trace;
+﻿using Datadog.Trace;
 
-namespace Benchmarks;
+namespace CommonTracerInterfaces;
 
 public sealed class FullTraceTracer : ITracer
 {
@@ -44,8 +43,11 @@ public sealed class FullTraceSpan : ISpan
         _scope.Dispose();
     }
 
-    public void AddTag(string name, string value)
+    public void AddTags(ReadOnlyMemory<KeyValuePair<string, string>> tags)
     {
-        _scope.Span.SetTag(name, value);
+        foreach ((string key, string value) in tags.Span)
+        {
+            _scope.Span.SetTag(key, value);
+        }
     }
 }
