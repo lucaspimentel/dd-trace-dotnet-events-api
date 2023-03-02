@@ -5,11 +5,9 @@
         <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugType>pdbonly</DebugType>
         <DebugSymbols>true</DebugSymbols>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Optimize>true</Optimize>
         <Configuration>Release</Configuration>
         <IsPackable>false</IsPackable>
-        <LangVersion>default</LangVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
@@ -17,6 +15,7 @@
         <PackageReference Include="Datadog.Trace" Version="2.24.1" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\CommonTracerInterfaces\CommonTracerInterfaces.csproj" />
       <ProjectReference Include="..\dd-trace-dotnet-events-api\dd-trace-dotnet-events-api.csproj" />
     </ItemGroup>
 </Project>
