@@ -2,6 +2,7 @@
 using Datadog.Trace;
 using ITracer = CommonTracerInterfaces.ITracer;
 
+const int tracesPerFlush = 100;
 const int spansPerTrace = 10;
 const int tagsPerSpan = 10;
 const string service = "Console-v0.4";
@@ -15,19 +16,37 @@ for (int i = 0; i < tagsPerSpan; i++)
 
 ITracer tracer = new FullTraceTracer(Tracer.Instance);
 
-using (var root = tracer.StartSpan("root", "server", service, "root-resource"))
-{
-    // add tags to root span
-    root.AddTags(tags);
+// create and flush one trace to warm things up
+CreateTrace(tracer, service, tags, spansPerTrace);
+await tracer.FlushAsync();
 
-    for (int spanIndex = 1; spanIndex < spansPerTrace; spanIndex++)
+Console.WriteLine("Attach profiler and press [ENTER] to generate more traces.");
+Console.ReadLine();
+
+while (true)
+{
+    for (int y = 0; y < tracesPerFlush; y++)
     {
-        using (var child = tracer.StartSpan("child", "internal", service, "child-resource"))
+        CreateTrace(tracer, service, tags, spansPerTrace);
+    }
+
+    await tracer.FlushAsync();
+}
+
+static void CreateTrace(ITracer tracer, string s, KeyValuePair<string, string>[] tags, int spansPerTrace)
+{
+    using (var root = tracer.StartSpan("root", "server", s, "root-resource"))
+    {
+        // add tags to root span
+        root.AddTags(tags);
+
+        for (int spanIndex = 1; spanIndex < spansPerTrace; spanIndex++)
         {
-            // add tags to child span
-            child.AddTags(tags);
+            using (var child = tracer.StartSpan("child", "internal", s, "child-resource"))
+            {
+                // add tags to child span
+                child.AddTags(tags);
+            }
         }
     }
 }
-
-await tracer.FlushAsync();
