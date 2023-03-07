@@ -16,9 +16,9 @@ namespace Benchmarks;
 [GcServer(true)]
 public class Benchmarks
 {
-    private const int TraceCount = 10;
-    private const int SpansPerTrace = 5;
-    private const int TagsPerSpan = 10;
+    private const int TraceCount = 20;
+    private const int SpansPerTrace = 20;
+    private const int TagsPerSpan = 20;
 
     private KeyValuePair<string, string>[] _tags;
 
