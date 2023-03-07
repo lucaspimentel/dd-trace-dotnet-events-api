@@ -4,7 +4,7 @@ using Datadog.Trace.Events.Writers;
 
 const int spansPerTrace = 10;
 const int tagsPerSpan = 10;
-const string service = "Console-Api-v0.4";
+const string service = "Console-EventsApi";
 
 KeyValuePair<string, string>[] tags = new KeyValuePair<string, string>[tagsPerSpan];
 

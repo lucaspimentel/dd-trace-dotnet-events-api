@@ -4,7 +4,7 @@ using ITracer = CommonTracerInterfaces.ITracer;
 
 const int spansPerTrace = 10;
 const int tagsPerSpan = 10;
-const string service = "Console-Api-v0.4";
+const string service = "Console-v0.4";
 
 KeyValuePair<string, string>[] tags = new KeyValuePair<string, string>[tagsPerSpan];
 
