@@ -8,6 +8,7 @@
         <Optimize>true</Optimize>
         <Configuration>Release</Configuration>
         <IsPackable>false</IsPackable>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
