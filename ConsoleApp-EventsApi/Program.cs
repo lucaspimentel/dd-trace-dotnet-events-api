@@ -1,6 +1,7 @@
 ﻿using CommonTracerInterfaces;
-using Datadog.Trace.Events.Serializers;
-using Datadog.Trace.Events.Writers;
+using Datadog.Trace.Agent.Events;
+using Datadog.Trace.Agent.Events.Serializers;
+using Datadog.Trace.Agent.Events.Writers;
 
 const int tracesPerFlush = 1000;
 const int spansPerTrace = 10;
@@ -23,7 +24,7 @@ var eventSerializer = new MessagePackSpanEventSerializer();
 
 var eventWriter = new EmbeddedSpanEventWriter(eventSerializer);
 
-ITracer tracer = new EventTracer(new Datadog.Trace.Events.Tracer(eventWriter));
+ITracer tracer = new EventTracer(new Tracer(eventWriter));
 
 // create and flush one trace to warm things up
 CreateTrace(tracer, service, tags, spansPerTrace);

@@ -1,6 +1,9 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 
-namespace Datadog.Trace.Events;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events;
 
 internal sealed class StringCache : IDisposable
 {

@@ -1,4 +1,4 @@
-﻿using Datadog.Trace.Events;
+﻿using Datadog.Trace.Agent.Events;
 
 namespace CommonTracerInterfaces;
 

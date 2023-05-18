@@ -1,29 +1,34 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.CompilerServices;
 using MessagePack;
 
-namespace Datadog.Trace.Events.Serializers;
+#nullable enable
 
-internal ref struct MessagePackWriterHelper
+namespace Datadog.Trace.Agent.Events.Serializers;
+
+internal readonly ref struct MessagePackWriterHelper
 {
-    private MessagePackWriter _writer;
+    private readonly Stream _stream;
     private readonly StringCache _stringCache;
 
-    public MessagePackWriterHelper(in MessagePackWriter writer, StringCache stringCache)
+    public MessagePackWriterHelper(Stream stream, StringCache stringCache)
     {
-        _writer = writer;
         _stringCache = stringCache;
+        _stream = stream;
     }
 
     public void Write(StartSpanEvent e)
     {
         // 2 top-level items: event type and additional fields
-        _writer.WriteArrayHeader(2);
+        WriteArrayHeader(2);
 
         // write event type
         Write((byte)SpanEventType.StartSpan);
 
         // start array for additional fields
-        _writer.WriteArrayHeader(10);
+        WriteArrayHeader(10);
 
         // start time
         Write(e.Timestamp);
@@ -42,13 +47,13 @@ internal ref struct MessagePackWriterHelper
     public void Write(FinishSpanEvent e)
     {
         // 2 top-level items: event type and additional fields
-        _writer.WriteArrayHeader(2);
+        WriteArrayHeader(2);
 
         // write event type
         Write((byte)SpanEventType.FinishSpan);
 
         // start array for additional fields
-        _writer.WriteArrayHeader(5);
+        WriteArrayHeader(5);
 
         // end time
         Write(e.Timestamp);
@@ -62,13 +67,13 @@ internal ref struct MessagePackWriterHelper
     public void Write(AddTagsSpanEvent e)
     {
         // 2 top-level items: event type and additional fields
-        _writer.WriteArrayHeader(2);
+        WriteArrayHeader(2);
 
         // write event type
         Write((byte)SpanEventType.AddSpanTags);
 
         // start array for additional fields
-        _writer.WriteArrayHeader(4);
+        WriteArrayHeader(4);
 
         Write(0); // duration, not used yet
         Write(e.TraceId);
@@ -82,7 +87,7 @@ internal ref struct MessagePackWriterHelper
     {
         if (tags.Length == 0)
         {
-            _writer.WriteMapHeader(0);
+            WriteMapHeader(0);
             return;
         }
 
@@ -97,7 +102,7 @@ internal ref struct MessagePackWriterHelper
             }
         }
 
-        _writer.WriteMapHeader(count);
+        WriteMapHeader(count);
 
         foreach ((string key, string value) in tagsSpan)
         {
@@ -114,11 +119,11 @@ internal ref struct MessagePackWriterHelper
     {
         if (tags.Length == 0)
         {
-            _writer.WriteMapHeader(0);
+            WriteMapHeader(0);
             return;
         }
 
-        _writer.WriteMapHeader(tags.Length);
+        WriteMapHeader(tags.Length);
 
         foreach ((string key, double value) in tags.Span)
         {
@@ -140,49 +145,54 @@ internal ref struct MessagePackWriterHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(string? value)
     {
-        int stringIndex = _stringCache.TryAdd(value ?? "");
-        _writer.Write(stringIndex);
+        if (_stringCache == null)
+        {
+            MessagePackBinary.WriteString(_stream, value);
+        }
+        else if (string.IsNullOrEmpty(value))
+        {
+            Write(0);
+        }
+        else
+        {
+            int stringIndex = _stringCache.TryAdd(value);
+            Write(stringIndex);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(ulong value)
     {
-        _writer.Write(value);
+        MessagePackBinary.WriteUInt64(_stream, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(long value)
     {
-        _writer.Write(value);
+        MessagePackBinary.WriteInt64(_stream, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(byte value)
     {
-        _writer.Write(value);
+        MessagePackBinary.WriteByte(_stream, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(double value)
     {
-        _writer.Write(value);
+        MessagePackBinary.WriteDouble(_stream, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteArrayHeader(int count)
     {
-        _writer.WriteArrayHeader(count);
+        MessagePackBinary.WriteArrayHeader(_stream, count);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteMapHeader(int count)
     {
-        _writer.WriteMapHeader(count);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Flush()
-    {
-        _writer.Flush();
+        MessagePackBinary.WriteMapHeader(_stream, count);
     }
 }

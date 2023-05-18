@@ -1,8 +1,13 @@
-﻿using System.Runtime.InteropServices;
-using CommunityToolkit.HighPerformance.Buffers;
-using Datadog.Trace.Events.Serializers;
+﻿using System;
+using System.Buffers;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent.Events.Serializers;
 
-namespace Datadog.Trace.Events.Writers;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events.Writers;
 
 public partial class EmbeddedSpanEventWriter : ISpanEventWriter
 {
@@ -15,7 +20,7 @@ public partial class EmbeddedSpanEventWriter : ISpanEventWriter
 
     public ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken)
     {
-        using var writer = new ArrayPoolBufferWriter<byte>();
+        var writer = new ArrayBufferWriter<byte>();
         _serializer.Serialize(spanEvents, writer);
 
         unsafe
@@ -27,6 +32,9 @@ public partial class EmbeddedSpanEventWriter : ISpanEventWriter
         return ValueTask.CompletedTask;
     }
 
-    [LibraryImport("ffi", EntryPoint = "submit")]
-    private static unsafe partial uint Submit(nint size, void* ptr);
+    // [LibraryImport("ffi", EntryPoint = "submit")]
+    // private static unsafe partial uint Submit(nint size, void* ptr);
+
+    [DllImport("ffi", EntryPoint = "submit")]
+    private static extern unsafe uint Submit(nint size, void* ptr);
 }

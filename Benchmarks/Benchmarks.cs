@@ -3,8 +3,9 @@ using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 using CommonTracerInterfaces;
-using Datadog.Trace.Events.Serializers;
-using Datadog.Trace.Events.Writers;
+using Datadog.Trace.Agent.Events;
+using Datadog.Trace.Agent.Events.Serializers;
+using Datadog.Trace.Agent.Events.Writers;
 
 namespace Benchmarks;
 
@@ -54,7 +55,7 @@ public class Benchmarks
     [Benchmark]
     public async ValueTask SendEventsTrace()
     {
-        ITracer tracer = new EventTracer(new Datadog.Trace.Events.Tracer(_eventWriter));
+        ITracer tracer = new EventTracer(new Tracer(_eventWriter));
 
         for (int traceIndex = 0; traceIndex < TraceCount; traceIndex++)
         {

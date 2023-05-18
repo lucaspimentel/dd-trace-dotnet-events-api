@@ -1,6 +1,10 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Events;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events;
 
 public readonly struct Span : IDisposable, IEquatable<Span>
 {

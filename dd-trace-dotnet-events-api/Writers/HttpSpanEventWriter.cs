@@ -1,7 +1,13 @@
-﻿using CommunityToolkit.HighPerformance.Buffers;
-using Datadog.Trace.Events.Serializers;
+﻿using System;
+using System.Buffers;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent.Events.Serializers;
 
-namespace Datadog.Trace.Events.Writers;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events.Writers;
 
 public class HttpSpanEventWriter : ISpanEventWriter
 {
@@ -24,7 +30,7 @@ public class HttpSpanEventWriter : ISpanEventWriter
 
     public async ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken)
     {
-        using var writer = new ArrayPoolBufferWriter<byte>();
+        var writer = new ArrayBufferWriter<byte>();
         _serializer.Serialize(spanEvents, writer);
 
         var content = new ReadOnlyMemoryContent(writer.WrittenMemory);

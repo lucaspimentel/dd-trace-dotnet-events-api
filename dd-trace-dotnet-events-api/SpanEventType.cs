@@ -1,4 +1,6 @@
-﻿namespace Datadog.Trace.Events;
+﻿namespace Datadog.Trace.Agent.Events;
+
+#nullable enable
 
 public enum SpanEventType : byte
 {

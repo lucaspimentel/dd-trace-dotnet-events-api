@@ -1,4 +1,9 @@
-﻿namespace Datadog.Trace.Events;
+﻿using System;
+using System.Collections.Generic;
+
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events;
 
 public abstract record SpanEvent(
     ulong TraceId,

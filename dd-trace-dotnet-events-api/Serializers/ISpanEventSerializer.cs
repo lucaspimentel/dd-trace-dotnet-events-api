@@ -1,6 +1,9 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 
-namespace Datadog.Trace.Events.Serializers;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events.Serializers;
 
 public interface ISpanEventSerializer
 {

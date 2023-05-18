@@ -1,10 +1,15 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using CommunityToolkit.HighPerformance.Buffers;
-using Datadog.Trace.Events.Writers;
+using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent.Events.Writers;
 
-namespace Datadog.Trace.Events;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events;
 
 public sealed class Tracer
 {
@@ -13,7 +18,7 @@ public sealed class Tracer
     private static readonly string Env = Environment.GetEnvironmentVariable("DD_ENV") ?? "";
 
     private readonly AsyncLocal<Span> _activeSpan = new();
-    private readonly ArrayPoolBufferWriter<SpanEvent> _events = new();
+    private readonly ArrayBufferWriter<SpanEvent> _events = new();
     private readonly ConcurrentDictionary<Span, Span> _openSpans = new();
     private readonly ISpanEventWriter _writer;
 

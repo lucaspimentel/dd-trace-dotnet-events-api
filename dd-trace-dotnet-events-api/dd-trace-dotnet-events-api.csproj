@@ -1,27 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <RootNamespace>Datadog.Trace.Events</RootNamespace>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <TargetFramework>net6.0</TargetFramework>
+        <AssemblyName>Datadog.Trace.Agent.Events</AssemblyName>
+        <RootNamespace>Datadog.Trace.Agent.Events</RootNamespace>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>disable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.1.0" />
-      <PackageReference Include="MessagePack" Version="2.4.59" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="dd-trace-dotnet-events-api.csproj.DotSettings" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="..\..\..\datadog\dd-trace-js\collector\target\release\ffi.dll">
-        <Link>ffi.dll</Link>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+        <PackageReference Include="MessagePack" Version="1.9.11" />
     </ItemGroup>
 
 </Project>

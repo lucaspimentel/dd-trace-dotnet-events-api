@@ -1,11 +1,16 @@
-﻿using System.Buffers;
-using CommunityToolkit.HighPerformance.Buffers;
+﻿using System;
+using System.Buffers;
 using MessagePack;
+using Microsoft.IO;
 
-namespace Datadog.Trace.Events.Serializers;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events.Serializers;
 
 public class MessagePackSpanEventSerializer : ISpanEventSerializer
 {
+    private static readonly RecyclableMemoryStreamManager StreamManager = new();
+
     public void Serialize(Memory<SpanEvent> spanEvents, IBufferWriter<byte> bufferWriter)
     {
         var stringCache = new StringCache();
@@ -14,9 +19,9 @@ public class MessagePackSpanEventSerializer : ISpanEventSerializer
         stringCache.TryAdd("");
 
         // write events to a separate buffer first while collecting strings
-        var eventBufferWriter = new ArrayPoolBufferWriter<byte>();
-        var eventWriter = new MessagePackWriter(eventBufferWriter);
-        var eventWriterHelper = new MessagePackWriterHelper(in eventWriter, stringCache);
+        var eventBufferWriter = new ArrayBufferWriter<byte>();
+        var eventStream = StreamManager.GetStream();
+        var eventWriterHelper = new MessagePackWriterHelper(eventStream, stringCache);
 
         // start event array
         eventWriterHelper.WriteArrayHeader(spanEvents.Length);

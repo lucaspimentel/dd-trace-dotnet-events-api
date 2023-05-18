@@ -1,7 +1,10 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.Text.Json;
 
-namespace Datadog.Trace.Events.Serializers;
+#nullable enable
+
+namespace Datadog.Trace.Agent.Events.Serializers;
 
 public class JsonSpanEventSerializer : ISpanEventSerializer
 {
