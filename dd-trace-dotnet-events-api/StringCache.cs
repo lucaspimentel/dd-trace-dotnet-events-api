@@ -50,7 +50,7 @@ internal sealed class StringCache : IDisposable
 
     public void Clear()
     {
-        Array.Clear(_array, 0, _array.Length);
+        Array.Clear(_array);
         _count = 0;
     }
 

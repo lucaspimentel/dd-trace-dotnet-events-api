@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,11 +17,8 @@ public class StreamSpanEventWriter : ISpanEventWriter
         _stream = stream;
     }
 
-    public async ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken)
+    public async ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken = default)
     {
-        var writer = new ArrayBufferWriter<byte>();
-        _serializer.Serialize(spanEvents, writer);
-
-        await _stream.WriteAsync(writer.WrittenMemory, cancellationToken).ConfigureAwait(false);
+        await _serializer.SerializeAsync(spanEvents, _stream, cancellationToken).ConfigureAwait(false);
     }
 }

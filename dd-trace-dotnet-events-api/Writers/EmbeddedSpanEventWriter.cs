@@ -9,7 +9,7 @@ using Datadog.Trace.Agent.Events.Serializers;
 
 namespace Datadog.Trace.Agent.Events.Writers;
 
-public partial class EmbeddedSpanEventWriter : ISpanEventWriter
+public class EmbeddedSpanEventWriter : ISpanEventWriter
 {
     private readonly ISpanEventSerializer _serializer;
 
@@ -18,18 +18,17 @@ public partial class EmbeddedSpanEventWriter : ISpanEventWriter
         _serializer = serializer;
     }
 
-    public ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken)
+    public async ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken = default)
     {
-        var writer = new ArrayBufferWriter<byte>();
-        _serializer.Serialize(spanEvents, writer);
+        var stream = MemoryStreamManager.Shared.GetStream();
+        await _serializer.SerializeAsync(spanEvents, stream, cancellationToken).ConfigureAwait(false);
 
         unsafe
         {
-            using var handle = writer.WrittenMemory.Pin();
-            _ = Submit(writer.WrittenCount, handle.Pointer);
+            byte[] buffer = stream.GetBuffer();
+            MemoryHandle handle = buffer.AsMemory().Pin();
+            _ = Submit(buffer.Length, handle.Pointer);
         }
-
-        return ValueTask.CompletedTask;
     }
 
     // [LibraryImport("ffi", EntryPoint = "submit")]

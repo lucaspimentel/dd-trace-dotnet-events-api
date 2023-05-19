@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Buffers;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using MessagePack;
-using Microsoft.IO;
 
 #nullable enable
 
@@ -9,59 +10,47 @@ namespace Datadog.Trace.Agent.Events.Serializers;
 
 public class MessagePackSpanEventSerializer : ISpanEventSerializer
 {
-    private static readonly RecyclableMemoryStreamManager StreamManager = new();
-
-    public void Serialize(Memory<SpanEvent> spanEvents, IBufferWriter<byte> bufferWriter)
+    public ValueTask SerializeAsync(Memory<SpanEvent> spanEvents, Stream stream, CancellationToken cancellationToken = default)
     {
-        var stringCache = new StringCache();
-
-        // add null and empty strings as index 0 and 1
-        stringCache.TryAdd("");
+        using var stringCache = new StringCache();
 
         // write events to a separate buffer first while collecting strings
-        var eventBufferWriter = new ArrayBufferWriter<byte>();
-        var eventStream = StreamManager.GetStream();
-        var eventWriterHelper = new MessagePackWriterHelper(eventStream, stringCache);
+        var eventStream = MemoryStreamManager.Shared.GetStream();
+        var eventWriter = new MessagePackWriter(eventStream, stringCache);
 
         // start event array
-        eventWriterHelper.WriteArrayHeader(spanEvents.Length);
+        eventWriter.WriteArrayHeader(spanEvents.Length);
 
         foreach (var spanEvent in spanEvents.Span)
         {
             switch (spanEvent)
             {
                 case StartSpanEvent startSpan:
-                    eventWriterHelper.Write(startSpan);
+                    eventWriter.Write(startSpan);
                     break;
 
                 case FinishSpanEvent finishSpan:
-                    eventWriterHelper.Write(finishSpan);
+                    eventWriter.Write(finishSpan);
                     break;
 
                 case AddTagsSpanEvent tagsSpan:
-                    eventWriterHelper.Write(tagsSpan);
+                    eventWriter.Write(tagsSpan);
                     break;
             }
         }
 
-        eventWriterHelper.Flush();
-
-        var payloadWriter = new MessagePackWriter(bufferWriter);
-
         // 2 top-level items: string array and events array
-        payloadWriter.WriteArrayHeader(2);
+        MessagePackBinary.WriteArrayHeader(stream, 2);
 
         // start string array
-        payloadWriter.WriteArrayHeader(stringCache.Count);
+        MessagePackBinary.WriteArrayHeader(stream, stringCache.Count);
 
-        foreach (string? s in stringCache.GetStrings())
+        foreach (string s in stringCache.GetStrings())
         {
-            payloadWriter.Write(s);
+            MessagePackBinary.WriteString(stream, s);
         }
 
-        // write the raw event array bytes from buffer
-        payloadWriter.WriteRaw(eventBufferWriter.WrittenSpan);
-
-        payloadWriter.Flush();
+        // write the raw event bytes we serialized earlier
+        return new ValueTask(eventStream.CopyToAsync(stream, cancellationToken));
     }
 }

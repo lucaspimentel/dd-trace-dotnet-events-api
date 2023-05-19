@@ -1,5 +1,7 @@
 ﻿using System;
-using System.Buffers;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 #nullable enable
 
@@ -7,5 +9,5 @@ namespace Datadog.Trace.Agent.Events.Serializers;
 
 public interface ISpanEventSerializer
 {
-    void Serialize(Memory<SpanEvent> spanEvents, IBufferWriter<byte> writer);
+    ValueTask SerializeAsync(Memory<SpanEvent> spanEvents, Stream stream, CancellationToken cancellationToken = default);
 }

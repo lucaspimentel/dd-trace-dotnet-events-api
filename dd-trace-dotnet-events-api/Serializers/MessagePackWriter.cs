@@ -8,12 +8,12 @@ using MessagePack;
 
 namespace Datadog.Trace.Agent.Events.Serializers;
 
-internal readonly ref struct MessagePackWriterHelper
+internal readonly ref struct MessagePackWriter
 {
     private readonly Stream _stream;
     private readonly StringCache _stringCache;
 
-    public MessagePackWriterHelper(Stream stream, StringCache stringCache)
+    public MessagePackWriter(Stream stream, StringCache stringCache)
     {
         _stringCache = stringCache;
         _stream = stream;

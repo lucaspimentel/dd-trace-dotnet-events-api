@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 #nullable enable
 
@@ -19,9 +22,8 @@ public class JsonSpanEventSerializer : ISpanEventSerializer
         _options = options;
     }
 
-    public void Serialize(Memory<SpanEvent> spanEvents, IBufferWriter<byte> writer)
+    public ValueTask SerializeAsync(Memory<SpanEvent> spanEvents, Stream stream, CancellationToken cancellationToken = default)
     {
-        var jsonWriter = new Utf8JsonWriter(writer);
-        JsonSerializer.Serialize(jsonWriter, spanEvents, _options);
+        return new ValueTask(JsonSerializer.SerializeAsync(stream, spanEvents, _options, cancellationToken));
     }
 }
