@@ -14,7 +14,6 @@ namespace Datadog.Trace.Agent.Events;
 public sealed class Tracer
 {
     private static readonly string RuntimeId = Guid.NewGuid().ToString();
-
     private static readonly string Env = Environment.GetEnvironmentVariable("DD_ENV") ?? "";
 
     private readonly AsyncLocal<Span> _activeSpan = new();
@@ -85,10 +84,10 @@ public sealed class Tracer
         }
 
         var spanEvent = new StartSpanEvent(
+            DateTimeOffset.UtcNow,
             traceId,
             spanId,
             parentId,
-            DateTimeOffset.UtcNow,
             service,
             name,
             resource,
@@ -111,9 +110,9 @@ public sealed class Tracer
         PopSpan(span);
 
         var spanEvent = new FinishSpanEvent(
+            DateTimeOffset.UtcNow,
             span.TraceId,
             span.SpanId,
-            DateTimeOffset.UtcNow,
             ReadOnlyMemory<KeyValuePair<string, string>>.Empty,
             ReadOnlyMemory<KeyValuePair<string, double>>.Empty
         );
@@ -129,6 +128,7 @@ public sealed class Tracer
     internal void AddTags(Span span, ReadOnlyMemory<KeyValuePair<string, string>> tags)
     {
         var spanEvent = new AddTagsSpanEvent(
+            DateTimeOffset.UtcNow,
             span.TraceId,
             span.SpanId,
             tags,
@@ -146,6 +146,7 @@ public sealed class Tracer
     internal void AddTags(Span span, ReadOnlyMemory<KeyValuePair<string, double>> tags)
     {
         var spanEvent = new AddTagsSpanEvent(
+            DateTimeOffset.UtcNow,
             span.TraceId,
             span.SpanId,
             ReadOnlyMemory<KeyValuePair<string, string>>.Empty,
@@ -176,8 +177,7 @@ public sealed class Tracer
 
         await _writer.WriteAsync(memory, cancellationToken).ConfigureAwait(false);
 
-        Array.Clear(rentedArray);
-        ArrayPool<SpanEvent>.Shared.Return(rentedArray);
+        ArrayPool<SpanEvent>.Shared.Return(rentedArray, clearArray: true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

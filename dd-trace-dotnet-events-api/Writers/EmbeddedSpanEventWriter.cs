@@ -18,7 +18,7 @@ public class EmbeddedSpanEventWriter : ISpanEventWriter
         _serializer = serializer;
     }
 
-    public async ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken = default)
+    public async ValueTask WriteAsync(ReadOnlyMemory<SpanEvent> spanEvents, CancellationToken cancellationToken = default)
     {
         var stream = MemoryStreamManager.Shared.GetStream();
         await _serializer.SerializeAsync(spanEvents, stream, cancellationToken).ConfigureAwait(false);

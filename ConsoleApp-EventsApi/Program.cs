@@ -3,9 +3,9 @@ using Datadog.Trace.Agent.Events;
 using Datadog.Trace.Agent.Events.Serializers;
 using Datadog.Trace.Agent.Events.Writers;
 
-const int tracesPerFlush = 1000;
-const int spansPerTrace = 10;
-const int tagsPerSpan = 10;
+// const int tracesPerFlush = 1000;
+const int spansPerTrace = 5;
+const int tagsPerSpan = 5;
 const string service = "Console-EventsApi";
 
 KeyValuePair<string, string>[] tags = new KeyValuePair<string, string>[tagsPerSpan];
@@ -15,21 +15,30 @@ for (int i = 0; i < tagsPerSpan; i++)
     tags[i] = new KeyValuePair<string, string>($"key{i:00}", $"value{i + 1:00}");
 }
 
+// write JSON to file
+//var eventSerializer = new JsonSpanEventSerializer();
+//await using FileStream stream = File.Create(@"C:\temp\trace-events.json");
+//var eventWriter = new StreamSpanEventWriter(eventSerializer, stream);
+
+// write MessagePack to file
 var eventSerializer = new MessagePackSpanEventSerializer();
+await using FileStream stream = File.Create(@"C:\temp\trace-events.msgpack");
+var eventWriter = new StreamSpanEventWriter(eventSerializer, stream);
 
-// await using FileStream stream = File.Create(@"C:\temp\messagepack-events.bin");
-// var eventWriter = new StreamSpanEventWriter(eventSerializer, stream);
-
+// send to http
 // var eventWriter = new HttpSpanEventWriter(eventSerializer, "http://localhost:8126/v0.1/events");
 
-var eventWriter = new EmbeddedSpanEventWriter(eventSerializer);
+// send to embedded native dll via p/invoke
+// var eventWriter = new EmbeddedSpanEventWriter(eventSerializer);
 
 ITracer tracer = new EventTracer(new Tracer(eventWriter));
 
 // create and flush one trace to warm things up
 CreateTrace(tracer, service, tags, spansPerTrace);
 await tracer.FlushAsync();
+// await stream.FlushAsync();
 
+/*
 Console.WriteLine("Attach profiler and press [ENTER] to generate more traces.");
 Console.ReadLine();
 
@@ -42,8 +51,7 @@ while (true)
 
     await tracer.FlushAsync();
 }
-
-// await stream.FlushAsync();
+*/
 
 static void CreateTrace(ITracer tracer, string s, KeyValuePair<string, string>[] tags, int spansPerTrace)
 {

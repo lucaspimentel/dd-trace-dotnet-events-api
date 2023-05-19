@@ -8,5 +8,5 @@ namespace Datadog.Trace.Agent.Events.Writers;
 
 public interface ISpanEventWriter
 {
-    ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken = default);
+    ValueTask WriteAsync(ReadOnlyMemory<SpanEvent> spanEvents, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -12,6 +13,7 @@ internal readonly ref struct MessagePackWriter
 {
     private readonly Stream _stream;
     private readonly StringCache _stringCache;
+    private readonly byte[] _buffer = new byte[16];
 
     public MessagePackWriter(Stream stream, StringCache stringCache)
     {
@@ -21,18 +23,13 @@ internal readonly ref struct MessagePackWriter
 
     public void Write(StartSpanEvent e)
     {
-        // 2 top-level items: event type and additional fields
-        WriteArrayHeader(2);
-
         // write event type
         Write((byte)SpanEventType.StartSpan);
 
-        // start array for additional fields
+        // start array for fields
         WriteArrayHeader(10);
 
-        // start time
         Write(e.Timestamp);
-
         Write(e.TraceId);
         Write(e.SpanId);
         Write(e.ParentId);
@@ -46,18 +43,13 @@ internal readonly ref struct MessagePackWriter
 
     public void Write(FinishSpanEvent e)
     {
-        // 2 top-level items: event type and additional fields
-        WriteArrayHeader(2);
-
         // write event type
         Write((byte)SpanEventType.FinishSpan);
 
-        // start array for additional fields
+        // start array for fields
         WriteArrayHeader(5);
 
-        // end time
         Write(e.Timestamp);
-
         Write(e.TraceId);
         Write(e.SpanId);
         Write(e.Meta);
@@ -66,20 +58,33 @@ internal readonly ref struct MessagePackWriter
 
     public void Write(AddTagsSpanEvent e)
     {
-        // 2 top-level items: event type and additional fields
-        WriteArrayHeader(2);
-
         // write event type
         Write((byte)SpanEventType.AddSpanTags);
 
-        // start array for additional fields
+        // start array for fields
         WriteArrayHeader(4);
 
-        Write(0); // duration, not used yet
+        Write(e.Timestamp);
         Write(e.TraceId);
         Write(e.SpanId);
         Write(e.Meta);
         Write(e.Metrics);
+    }
+
+    public void Write(ErrorSpanEvent e)
+    {
+        // write event type
+        Write((byte)SpanEventType.Error);
+
+        // start array for fields
+        WriteArrayHeader(6);
+
+        Write(e.Timestamp);
+        Write(e.TraceId);
+        Write(e.SpanId);
+        Write(e.Message);
+        Write(e.Type);
+        Write(e.Stack);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -135,29 +140,42 @@ internal readonly ref struct MessagePackWriter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(DateTimeOffset value)
     {
-        const long nanoSecondsPerTick = 1_000_000 / TimeSpan.TicksPerMillisecond;
-        const long unixEpochInTicks = 621355968000000000; // = DateTimeOffset.FromUnixTimeMilliseconds(0).Ticks
+        const ulong nanoSecondsPerTick = 1_000_000 / TimeSpan.TicksPerMillisecond;
+        const ulong unixEpochInTicks = 621355968000000000; // = DateTimeOffset.FromUnixTimeMilliseconds(0).Ticks
 
-        long nanoseconds = (value.Ticks - unixEpochInTicks) * nanoSecondsPerTick;
+        ulong nanoseconds = ((ulong)value.Ticks - unixEpochInTicks) * nanoSecondsPerTick;
         Write(nanoseconds);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Write(string? value)
     {
-        if (_stringCache == null)
-        {
-            MessagePackBinary.WriteString(_stream, value);
-        }
-        else if (string.IsNullOrEmpty(value))
+        if (string.IsNullOrEmpty(value))
         {
             Write(0);
         }
         else
         {
-            int stringIndex = _stringCache.TryAdd(value);
-            Write(stringIndex);
+            var stringIndex = (ulong)_stringCache.TryAdd(value);
+            Write(stringIndex + 1);
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void WriteAsBinary(ulong upper, ulong lower)
+    {
+        byte[] buffer = _buffer;
+        BinaryPrimitives.WriteUInt64BigEndian(buffer.AsSpan(0, 8), upper);
+        BinaryPrimitives.WriteUInt64BigEndian(buffer.AsSpan(8, 8), lower);
+        MessagePackBinary.WriteBytes(_stream, buffer, 0, 16);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void WriteAsBinary(ulong value)
+    {
+        byte[] buffer = _buffer;
+        BinaryPrimitives.WriteUInt64BigEndian(buffer, value);
+        MessagePackBinary.WriteBytes(_stream, buffer, 0, 8);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -185,13 +203,13 @@ internal readonly ref struct MessagePackWriter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WriteArrayHeader(int count)
+    private void WriteArrayHeader(int count)
     {
         MessagePackBinary.WriteArrayHeader(_stream, count);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WriteMapHeader(int count)
+    private void WriteMapHeader(int count)
     {
         MessagePackBinary.WriteMapHeader(_stream, count);
     }

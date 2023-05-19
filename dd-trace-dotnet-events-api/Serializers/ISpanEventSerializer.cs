@@ -9,5 +9,5 @@ namespace Datadog.Trace.Agent.Events.Serializers;
 
 public interface ISpanEventSerializer
 {
-    ValueTask SerializeAsync(Memory<SpanEvent> spanEvents, Stream stream, CancellationToken cancellationToken = default);
+    ValueTask SerializeAsync(ReadOnlyMemory<SpanEvent> spanEvents, Stream stream, CancellationToken cancellationToken = default);
 }

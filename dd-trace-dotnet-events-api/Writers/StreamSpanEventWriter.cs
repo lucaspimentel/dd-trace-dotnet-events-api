@@ -17,8 +17,8 @@ public class StreamSpanEventWriter : ISpanEventWriter
         _stream = stream;
     }
 
-    public async ValueTask WriteAsync(Memory<SpanEvent> spanEvents, CancellationToken cancellationToken = default)
+    public ValueTask WriteAsync(ReadOnlyMemory<SpanEvent> spanEvents, CancellationToken cancellationToken = default)
     {
-        await _serializer.SerializeAsync(spanEvents, _stream, cancellationToken).ConfigureAwait(false);
+        return _serializer.SerializeAsync(spanEvents, _stream, cancellationToken);
     }
 }
