@@ -15,21 +15,23 @@ for (int i = 0; i < tagsPerSpan; i++)
     tags[i] = new KeyValuePair<string, string>($"key{i:00}", $"value{i + 1:00}");
 }
 
-// write JSON to file
-//var eventSerializer = new JsonSpanEventSerializer();
-//await using FileStream stream = File.Create(@"C:\temp\trace-events.json");
-//var eventWriter = new StreamSpanEventWriter(eventSerializer, stream);
+// 1) write JSON to file
+// var eventSerializer = new JsonSpanEventSerializer();
+// await using FileStream stream = File.Create(@"C:\temp\trace-events.json");
+// var eventWriter = new StreamSpanEventWriter(eventSerializer, stream);
 
-// write MessagePack to file
-var eventSerializer = new MessagePackSpanEventSerializer();
-await using FileStream stream = File.Create(@"C:\temp\trace-events.msgpack");
-var eventWriter = new StreamSpanEventWriter(eventSerializer, stream);
+// 2) write MessagePack to file
+// var eventSerializer = new MessagePackSpanEventSerializer();
+// await using FileStream stream = File.Create(@"C:\temp\trace-events.msgpack");
+// var eventWriter = new StreamSpanEventWriter(eventSerializer, stream);
 
-// send to http
+// 3) send via http
+// var eventSerializer = new MessagePackSpanEventSerializer();
 // var eventWriter = new HttpSpanEventWriter(eventSerializer, "http://localhost:8126/v0.1/events");
 
-// send to embedded native dll via p/invoke
-// var eventWriter = new EmbeddedSpanEventWriter(eventSerializer);
+// 4) send via p/invoke to embedded native dll
+var eventSerializer = new MessagePackSpanEventSerializer();
+var eventWriter = new EmbeddedSpanEventWriter(eventSerializer);
 
 ITracer tracer = new EventTracer(new Tracer(eventWriter));
 

@@ -62,7 +62,7 @@ internal readonly ref struct MessagePackWriter
         Write((byte)SpanEventType.AddSpanTags);
 
         // start array for fields
-        WriteArrayHeader(4);
+        WriteArrayHeader(5);
 
         Write(e.Timestamp);
         Write(e.TraceId);
