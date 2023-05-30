@@ -28,7 +28,7 @@ public class EmbeddedSpanEventWriter : ISpanEventWriter
         byte[] buffer = stream.GetBuffer();
         MemoryHandle payloadBufferHandle = buffer.AsMemory().Pin();
 
-        string hostName = System.Net.Dns.GetHostName();
+        string hostName = "http://localhost:8126";
         byte[] hostNameBytes = Encoding.UTF8.GetBytes(hostName);
         MemoryHandle hostnameHandle = hostNameBytes.AsMemory().Pin();
 
